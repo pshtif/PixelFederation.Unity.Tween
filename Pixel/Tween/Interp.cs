@@ -7,12 +7,15 @@
  *	
  *	Interpolators
  */
+ #define PIXEL_GEOM
 
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System;
+#if PIXEL_GEOM
 using Pixel.Geom;
+#endif
 
 namespace Pixel.Tween
 {
@@ -114,6 +117,7 @@ namespace Pixel.Tween
         }
     }
 
+    #if PIXEL_GEOM
     public class PositionCurve1Interp : Interp<Vector3>
     {
         private Curve1 _curveX;
@@ -167,4 +171,5 @@ namespace Pixel.Tween
             Target.transform.localScale = cx;
         }
     }
+    #endif
 }

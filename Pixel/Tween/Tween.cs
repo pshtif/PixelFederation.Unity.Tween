@@ -6,12 +6,15 @@
  *	Ported from Genome2D framework (https://github.com/pshtif/Genome2D/)
  *	
  */
+ #define PIXEL_GEOM
 
 using System.Collections;
 using System.Collections.Generic;
 using System;
 using UnityEngine;
+#if PIXEL_GEOM
 using Pixel.Geom;
+#endif
 
 namespace Pixel.Tween
 {
@@ -197,6 +200,7 @@ namespace Pixel.Tween
             return step;
         }
 
+        #if PIXEL_GEOM
         public TweenStep CurveScale(Curve3 p_curve, float p_duration)
         {
             TweenStep step = _empty ? this : sequence.AddStep(GetPoolInstance());
@@ -204,28 +208,6 @@ namespace Pixel.Tween
             ScaleCurve3Interp curveInterp = new ScaleCurve3Interp(p_curve);
             curveInterp.Start(target, target.transform.localScale, Vector3.one);
             step._interp = curveInterp;
-            _empty = false;
-            return step;
-        }
-
-        public TweenStep Rotation(Quaternion p_rotation, float p_duration)
-        {
-            TweenStep step = _empty ? this : sequence.AddStep(GetPoolInstance());
-            step._duration = p_duration;
-            RotationInterp interp = new RotationInterp();
-            interp.Start(target, target.transform.rotation, p_rotation);
-            step._interp = interp;
-            _empty = false;
-            return step;
-        }
-
-        public TweenStep Position(Vector3 p_position, float p_duration)
-        {
-            TweenStep step = _empty ? this : sequence.AddStep(GetPoolInstance());
-            step._duration = p_duration;
-            PositionInterp vector3Interp = new PositionInterp();
-            vector3Interp.Start(target, target.transform.position, p_position);
-            step._interp = vector3Interp;
             _empty = false;
             return step;
         }
@@ -251,6 +233,29 @@ namespace Pixel.Tween
             _empty = false;
             return step;
         }
+        #endif
+
+        public TweenStep Rotation(Quaternion p_rotation, float p_duration)
+        {
+            TweenStep step = _empty ? this : sequence.AddStep(GetPoolInstance());
+            step._duration = p_duration;
+            RotationInterp interp = new RotationInterp();
+            interp.Start(target, target.transform.rotation, p_rotation);
+            step._interp = interp;
+            _empty = false;
+            return step;
+        }
+
+        public TweenStep Position(Vector3 p_position, float p_duration)
+        {
+            TweenStep step = _empty ? this : sequence.AddStep(GetPoolInstance());
+            step._duration = p_duration;
+            PositionInterp vector3Interp = new PositionInterp();
+            vector3Interp.Start(target, target.transform.position, p_position);
+            step._interp = vector3Interp;
+            _empty = false;
+            return step;
+        }        
 
         public TweenStep Ease(Func<float,float> p_ease)
         {
