@@ -16,10 +16,12 @@ namespace Pixel.Tween
 {
     public class Bounce
     {
+        /*
         static public float EaseIn(float p_t)
         {
             throw new System.InvalidOperationException("Not implemented yet.");
         }
+        /**/
 
         static public float EaseOut(float p_t)
         {
@@ -40,7 +42,7 @@ namespace Pixel.Tween
                 return (7.5625f * (p_t -= (2.625f / 2.75f)) * p_t + .984375f);
             }
         }
-
+        /*
         static public float EaseInOut(float p_t)
         {
             if (p_t < .5)
@@ -52,6 +54,7 @@ namespace Pixel.Tween
                 return EaseOut(p_t * 2 - 1) * .5f + .5f;
             }
         }
+        /**/
     }
 
     public class Cubic

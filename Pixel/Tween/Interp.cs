@@ -7,7 +7,8 @@
  *	
  *	Interpolators
  */
- #define PIXEL_GEOM
+
+#define PIXEL_GEOM
 
 using UnityEngine;
 using System.Collections;
@@ -21,7 +22,17 @@ namespace Pixel.Tween
 {
     public class Interp
     {
+        public Func<float, float> ease;
+        public float duration;
+
+        protected bool _started = false;
+
         virtual public void Update(float p_progress) { }
+
+        public void Reset()
+        {
+            _started = false;
+        }
     }
 
     public class Interp<T> : Interp where T : struct
@@ -39,13 +50,13 @@ namespace Pixel.Tween
 
         public Interp(Func<T, T, float, T> p_interpFunc)
         {
+            ease = Linear.None;
             _interpFunc = p_interpFunc;
         }
 
-        virtual public void Start(GameObject p_target, T p_start, T p_to)
+        virtual public void Init(GameObject p_target, T p_to)
         {
             _target = p_target;
-            _start = p_start;
             _to = p_to;
         }
 
@@ -80,6 +91,11 @@ namespace Pixel.Tween
     {
         override public void Update(float p_progress)
         {
+            if (!_started)
+            {
+                _start = Target.GetComponent<SpriteRenderer>().color.a;
+                _started = true;
+            }
             base.Update(p_progress);
             if (Target.GetComponent<SpriteRenderer>() != null)
             {
@@ -94,6 +110,11 @@ namespace Pixel.Tween
     {
         override public void Update(float p_progress)
         {
+            if (!_started)
+            {
+                _start = Target.transform.rotation;
+                _started = true;
+            }
             base.Update(p_progress);
             Target.transform.rotation = Current;
         }
@@ -103,6 +124,11 @@ namespace Pixel.Tween
     {
         override public void Update(float p_progress)
         {
+            if (!_started)
+            {
+                _start = Target.transform.localScale;
+                _started = true;
+            }
             base.Update(p_progress);
             Target.transform.localScale = Current;
         }
@@ -112,6 +138,11 @@ namespace Pixel.Tween
     {
         override public void Update(float p_progress)
         {
+            if (!_started)
+            {
+                _start = Target.transform.position;
+                _started = true;
+            }
             base.Update(p_progress);
             Target.transform.position = Current;
         }
@@ -132,6 +163,12 @@ namespace Pixel.Tween
 
         override public void Update(float p_progress)
         {
+            if (!_started)
+            {
+                _start = Target.transform.position;
+                _started = true;
+            }
+
             float cx = _start.x + (_curveX != null ? _curveX.Calculate(p_progress) : 0);
             float cy = _start.y + (_curveY != null ? _curveY.Calculate(p_progress) : 0);
             float cz = _start.z + (_curveZ != null ? _curveZ.Calculate(p_progress) : 0);
@@ -150,6 +187,12 @@ namespace Pixel.Tween
 
         override public void Update(float p_progress)
         {
+            if (!_started)
+            {
+                _start = Target.transform.position;
+                _started = true;
+            }
+
             Vector3 cx = _start + _curve.Calculate(p_progress);
 
             Target.transform.position = cx;
@@ -166,6 +209,12 @@ namespace Pixel.Tween
 
         override public void Update(float p_progress)
         {
+            if (!_started)
+            {
+                _start = Target.transform.localScale;
+                _started = true;
+            }
+
             Vector3 cx = _start + _curve.Calculate(p_progress);
 
             Target.transform.localScale = cx;

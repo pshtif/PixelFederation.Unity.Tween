@@ -5,6 +5,8 @@
  *
  *	Ported from Genome2D framework (https://github.com/pshtif/Genome2D/)
  *	
+ *	NOTE: The API differs from original Haxe Genome2D framework due to language differences and Unity's approach to structures
+ *	
  */
  #define PIXEL_GEOM
 
@@ -50,7 +52,7 @@ namespace Pixel.Tween
 
         static public void Initialize()
         {
-            Debug.Log("Initialize TweenCore");            
+            Debug.Log("Initialize Pixel Tween Core");            
             _initialized = true;
             _core = new GameObject();
             _core.name = "PixelTweenCore";
@@ -97,18 +99,23 @@ namespace Pixel.Tween
         public TweenStep previous;
         public TweenStep next;
         public GameObject target;
-        public Func<float, float> ease;
+        public string stepId;
+
         private bool _empty;
         private float _time;
         private float _duration;
-        private Interp _interp;
+        private List<Interp> _interps;
+        private Interp _lastInterp;
+        private string _gotoStepId = "";
+        private int _gotoRepeatCount = 0;
+        private int _gotoCurrentCount = 0;
 
         private Action<TweenStep> _onUpdate;
         private Action<TweenStep> _onComplete;
 
         public TweenStep()
         {
-            ease = Linear.None;
+            _interps = new List<Interp>();
             _time = _duration = 0;
             _empty = true;
         }
@@ -133,28 +140,62 @@ namespace Pixel.Tween
 
         private void Finish()
         {
-            if (_onComplete != null) _onComplete.Invoke(this);
-            sequence.NextStep();
-            //if (g2d_interps != null) for (interp in g2d_interps) interp.reset();
+            Reset();
+            if (sequence != null) {
+                if (_gotoCurrentCount < _gotoRepeatCount)
+                {
+                    _gotoCurrentCount++;
+                    sequence.GoTo(sequence.GetStepById(_gotoStepId));
+                }
+                else
+                {
+                    _gotoCurrentCount = 0;
+                    if (_onComplete != null) _onComplete.Invoke(this);
+                    sequence.NextStep();
+                }
+            }
+        }
+
+        private void Reset()
+        {
+            _time = 0;
+            if (_interps != null) foreach (Interp interp in _interps) interp.Reset();
         }
 
         private void Dispose()
         {
+            _interps = new List<Interp>();
+            _empty = true;
+            _time = _duration = 0;
+
+            // Clean references
             sequence = null;
             previous = null;
             next = null;
-            _time = _duration = 0;
 
             // Put back to pool
             poolNext = poolFirst;
             poolFirst = this;
         }
 
+        public TweenStep id(string p_id)
+        {
+            stepId = p_id;
+            return this;
+        }
+
+        public TweenStep Extend()
+        {
+            TweenStep step = sequence.AddStep(GetPoolInstance());
+            step.target = target;
+            return step;
+        }
+
         public TweenStep Delay(float p_duration)
         {
             TweenStep step = _empty ? this : sequence.AddStep(GetPoolInstance());
             step._duration = p_duration;
-            _empty = false;
+            step._empty = false;
             step = sequence.AddStep(GetPoolInstance());
             step.target = target;
             return step;
@@ -168,98 +209,30 @@ namespace Pixel.Tween
             return step;
         }
 
-        public TweenStep Custom<T>(Interp<T> p_interp, T p_start, T p_target, float p_duration) where T : struct
+        public TweenStep Ease(Func<float, float> p_ease, bool p_allInterps = false)
         {
-            TweenStep step = _empty ? this : sequence.AddStep(GetPoolInstance());
-            step._duration = p_duration;
-            p_interp.Start(target, p_start, p_target);
-            step._interp = p_interp;
-            _empty = false;
-            return step;
+            if (p_allInterps)
+            {
+                if (_interps != null)
+                {
+                    foreach (Interp interp in _interps)
+                    {
+                        interp.ease = p_ease;
+                    }
+                }
+            }
+            else
+            {
+                if (_lastInterp != null) _lastInterp.ease = p_ease;
+            }
+            return this;
         }
 
-        public TweenStep Alpha(float p_alpha, float p_duration)
+        public TweenStep GoTo(string p_stepId, int p_repeatCount)
         {
-            TweenStep step = _empty ? this : sequence.AddStep(GetPoolInstance());
-            step._duration = p_duration;
-            FloatInterp floatInterp = new AlphaInterp();
-            floatInterp.Start(target, 1, p_alpha);
-            step._interp = floatInterp;
-            _empty = false;
-            return step;
-        }
+            _gotoStepId = p_stepId;
+            _gotoRepeatCount = p_repeatCount;
 
-        public TweenStep Scale(Vector3 p_position, float p_duration)
-        {
-            TweenStep step = _empty ? this : sequence.AddStep(GetPoolInstance());
-            step._duration = p_duration;
-            ScaleInterp vector3Interp = new ScaleInterp();
-            vector3Interp.Start(target, target.transform.position, p_position);
-            step._interp = vector3Interp;
-            _empty = false;
-            return step;
-        }
-
-        #if PIXEL_GEOM
-        public TweenStep CurveScale(Curve3 p_curve, float p_duration)
-        {
-            TweenStep step = _empty ? this : sequence.AddStep(GetPoolInstance());
-            step._duration = p_duration;
-            ScaleCurve3Interp curveInterp = new ScaleCurve3Interp(p_curve);
-            curveInterp.Start(target, target.transform.localScale, Vector3.one);
-            step._interp = curveInterp;
-            _empty = false;
-            return step;
-        }
-
-        public TweenStep CurvePosition(Curve3 p_curve, float p_duration)
-        {
-            TweenStep step = _empty ? this : sequence.AddStep(GetPoolInstance());
-            step._duration = p_duration;
-            PositionCurve3Interp curveInterp = new PositionCurve3Interp(p_curve);
-            curveInterp.Start(target, target.transform.position, Vector3.one);
-            step._interp = curveInterp;
-            _empty = false;
-            return step;
-        }
-
-        public TweenStep CurvePosition(Curve1 p_curveX, Curve1 p_curveY, Curve1 p_curveZ, float p_duration)
-        {
-            TweenStep step = _empty ? this : sequence.AddStep(GetPoolInstance());
-            step._duration = p_duration;
-            PositionCurve1Interp curveInterp = new PositionCurve1Interp(p_curveX, p_curveY, p_curveZ);
-            curveInterp.Start(target, target.transform.position, Vector3.one);
-            step._interp = curveInterp;
-            _empty = false;
-            return step;
-        }
-        #endif
-
-        public TweenStep Rotation(Quaternion p_rotation, float p_duration)
-        {
-            TweenStep step = _empty ? this : sequence.AddStep(GetPoolInstance());
-            step._duration = p_duration;
-            RotationInterp interp = new RotationInterp();
-            interp.Start(target, target.transform.rotation, p_rotation);
-            step._interp = interp;
-            _empty = false;
-            return step;
-        }
-
-        public TweenStep Position(Vector3 p_position, float p_duration)
-        {
-            TweenStep step = _empty ? this : sequence.AddStep(GetPoolInstance());
-            step._duration = p_duration;
-            PositionInterp vector3Interp = new PositionInterp();
-            vector3Interp.Start(target, target.transform.position, p_position);
-            step._interp = vector3Interp;
-            _empty = false;
-            return step;
-        }        
-
-        public TweenStep Ease(Func<float,float> p_ease)
-        {
-            ease = p_ease;
             return this;
         }
 
@@ -274,10 +247,12 @@ namespace Pixel.Tween
                 _time = _duration;
             }
 
-            if (_interp != null)
+            if (_interps != null)
             {
-                //Debug.Log(ease(_time / _duration));
-                _interp.Update(ease(_time / _duration));
+                foreach (Interp interp in _interps)
+                {
+                    if (_time <= interp.duration) interp.Update(interp.ease(_time / interp.duration));
+                }
             }
 
             if (_onUpdate != null)
@@ -292,6 +267,91 @@ namespace Pixel.Tween
 
             return rest;
         }
+
+        private void AddInterp(Interp p_interp)
+        {
+            _duration = Mathf.Max(_duration, p_interp.duration);
+            _interps.Add(p_interp);
+            _lastInterp = p_interp;
+            _empty = false;
+        }
+
+        /****************************************************************************************************
+         *  Interpolators
+         ****************************************************************************************************/
+
+        public TweenStep Custom<T>(Interp<T> p_interp, T p_start, T p_target, float p_duration) where T : struct
+        {
+            p_interp.duration = p_duration;
+            p_interp.Init(target, p_target);
+            AddInterp(p_interp);
+            return this;
+        }
+
+        public TweenStep Alpha(float p_alpha, float p_duration)
+        {
+            FloatInterp interp = new AlphaInterp();
+            interp.duration = p_duration;
+            interp.Init(target, p_alpha);
+            AddInterp(interp);
+            return this;
+        }
+
+        public TweenStep Scale(Vector3 p_scale, float p_duration)
+        {
+            ScaleInterp interp = new ScaleInterp();
+            interp.duration = p_duration;
+            interp.Init(target, p_scale);
+            AddInterp(interp);
+            return this;
+        }
+
+        #if PIXEL_GEOM
+        public TweenStep CurveScale(Curve3 p_curve, float p_duration)
+        {
+            ScaleCurve3Interp interp = new ScaleCurve3Interp(p_curve);
+            interp.duration = p_duration;
+            interp.Init(target, Vector3.one);
+            AddInterp(interp);
+            return this;
+        }
+
+        public TweenStep CurvePosition(Curve3 p_curve, float p_duration)
+        {
+            PositionCurve3Interp interp = new PositionCurve3Interp(p_curve);
+            interp.duration = p_duration;
+            interp.Init(target, Vector3.one);
+            AddInterp(interp);
+            return this;
+        }
+
+        public TweenStep CurvePosition(Curve1 p_curveX, Curve1 p_curveY, Curve1 p_curveZ, float p_duration)
+        {
+            PositionCurve1Interp interp = new PositionCurve1Interp(p_curveX, p_curveY, p_curveZ);
+            interp.duration = p_duration;
+            interp.Init(target, Vector3.one);
+            AddInterp(interp);
+            return this;
+        }
+        #endif
+
+        public TweenStep Rotation(Quaternion p_rotation, float p_duration)
+        {
+            RotationInterp interp = new RotationInterp();
+            interp.duration = p_duration;
+            interp.Init(target, p_rotation);
+            AddInterp(interp);
+            return this;
+        }
+
+        public TweenStep Position(Vector3 p_position, float p_duration)
+        {
+            PositionInterp interp = new PositionInterp();
+            interp.duration = p_duration;
+            interp.Init(target, p_position);
+            AddInterp(interp);
+            return this;
+        }        
     }
 
     public class TweenSequence
@@ -364,6 +424,25 @@ namespace Pixel.Tween
         {
             timeline.dirty = true;
             _complete = true;
+        }
+
+        public TweenStep GetStepById(string p_stepId)
+        {
+            TweenStep step = _firstStep;
+
+            if (p_stepId != "") {
+                while (step != null) {
+                    if (step.stepId == p_stepId) break;
+                    else step = step.next;
+                }
+            }
+
+            return step;
+        }
+
+        public void GoTo(TweenStep p_step)
+        {
+            _currentStep = p_step;
         }
 
         public TweenStep AddStep(TweenStep p_tweenStep)
