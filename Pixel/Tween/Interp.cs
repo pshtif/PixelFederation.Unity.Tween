@@ -25,13 +25,15 @@ namespace Pixel.Tween
         public Func<float, float> ease;
         public float duration;
 
-        protected bool _started = false;
+        protected bool _relative = false;
+        protected bool _reflectFrom = false;
+        protected bool _initialized = false;
 
         virtual public void Update(float p_progress) { }
 
         public void Reset()
         {
-            _started = false;
+            _initialized = false;
         }
     }
 
@@ -40,8 +42,11 @@ namespace Pixel.Tween
         protected GameObject _target;
         public GameObject Target { get { return _target; } }
 
-        protected T _start;
+        protected T _from;
         protected T _to;
+
+        protected T _start;
+        protected T _end;
 
         protected T _current;
         public T Current { get { return _current; } }
@@ -54,15 +59,25 @@ namespace Pixel.Tween
             _interpFunc = p_interpFunc;
         }
 
-        virtual public void Init(GameObject p_target, T p_to)
+        virtual public void Init(GameObject p_target, T p_to, bool p_relative)
         {
             _target = p_target;
             _to = p_to;
+            _relative = p_relative;
+            _reflectFrom = true;
+        }
+
+        virtual public void Init(GameObject p_target, T p_to, T p_from, bool p_relative)
+        {
+            _target = p_target;
+            _to = p_to;
+            _relative = p_relative;
+            _reflectFrom = false;
         }
 
         override public void Update(float p_progress)
         {
-            _current = _interpFunc(_start, _to, p_progress);
+            _current = _interpFunc(_start, _end, p_progress);
         }
     }
 
@@ -91,10 +106,12 @@ namespace Pixel.Tween
     {
         override public void Update(float p_progress)
         {
-            if (!_started)
+            if (!_initialized)
             {
-                _start = Target.GetComponent<SpriteRenderer>().color.a;
-                _started = true;
+                _start = _reflectFrom ? Target.GetComponent<SpriteRenderer>().color.a : _from;
+                _end = _relative ? _start + _to : _to;
+                
+                _initialized = true;
             }
             base.Update(p_progress);
             if (Target.GetComponent<SpriteRenderer>() != null)
@@ -110,10 +127,11 @@ namespace Pixel.Tween
     {
         override public void Update(float p_progress)
         {
-            if (!_started)
+            if (!_initialized)
             {
-                _start = Target.transform.rotation;
-                _started = true;
+                _start = _reflectFrom ? Target.transform.rotation : _from;
+                _end = _relative ? _start * _to : _to;
+                _initialized = true;
             }
             base.Update(p_progress);
             Target.transform.rotation = Current;
@@ -124,10 +142,11 @@ namespace Pixel.Tween
     {
         override public void Update(float p_progress)
         {
-            if (!_started)
+            if (!_initialized)
             {
-                _start = Target.transform.localScale;
-                _started = true;
+                _start = _reflectFrom ? Target.transform.localScale : _from;
+                _end = _relative ? _start + _to : _to;
+                _initialized = true;
             }
             base.Update(p_progress);
             Target.transform.localScale = Current;
@@ -138,10 +157,11 @@ namespace Pixel.Tween
     {
         override public void Update(float p_progress)
         {
-            if (!_started)
+            if (!_initialized)
             {
-                _start = Target.transform.position;
-                _started = true;
+                _start = _reflectFrom ? Target.transform.position : _from;
+                _end = _relative ? _start + _to : _to;
+                _initialized = true;
             }
             base.Update(p_progress);
             Target.transform.position = Current;
@@ -163,10 +183,10 @@ namespace Pixel.Tween
 
         override public void Update(float p_progress)
         {
-            if (!_started)
+            if (!_initialized)
             {
-                _start = Target.transform.position;
-                _started = true;
+                _start = _reflectFrom ? Target.transform.position : _from;
+                _initialized = true;
             }
 
             float cx = _start.x + (_curveX != null ? _curveX.Calculate(p_progress) : 0);
@@ -187,10 +207,10 @@ namespace Pixel.Tween
 
         override public void Update(float p_progress)
         {
-            if (!_started)
+            if (!_initialized)
             {
-                _start = Target.transform.position;
-                _started = true;
+                _start = _reflectFrom ? Target.transform.position : _from;
+                _initialized = true;
             }
 
             Vector3 cx = _start + _curve.Calculate(p_progress);
@@ -209,10 +229,10 @@ namespace Pixel.Tween
 
         override public void Update(float p_progress)
         {
-            if (!_started)
+            if (!_initialized)
             {
-                _start = Target.transform.localScale;
-                _started = true;
+                _start = _reflectFrom ? Target.transform.localScale : _from;
+                _initialized = true;
             }
 
             Vector3 cx = _start + _curve.Calculate(p_progress);

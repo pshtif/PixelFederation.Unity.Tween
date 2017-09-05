@@ -283,35 +283,62 @@ namespace Pixel.Tween
         public TweenStep Custom<T>(Interp<T> p_interp, T p_start, T p_target, float p_duration) where T : struct
         {
             p_interp.duration = p_duration;
-            p_interp.Init(target, p_target);
+            p_interp.Init(target, p_target, false);
             AddInterp(p_interp);
             return this;
         }
 
-        public TweenStep Alpha(float p_alpha, float p_duration)
+        public TweenStep Alpha(float p_to, float p_duration, bool p_relative = false)
         {
             FloatInterp interp = new AlphaInterp();
             interp.duration = p_duration;
-            interp.Init(target, p_alpha);
+            interp.Init(target, p_to, p_relative);
             AddInterp(interp);
             return this;
         }
 
-        public TweenStep Scale(Vector3 p_scale, float p_duration)
+        public TweenStep Alpha(float p_from, float p_to, float p_duration, bool p_relative = false)
+        {
+            FloatInterp interp = new AlphaInterp();
+            interp.duration = p_duration;
+            interp.Init(target, p_to, p_from, p_relative);
+            AddInterp(interp);
+            return this;
+        }
+
+        public TweenStep Scale(Vector3 p_to, float p_duration, bool p_relative = false)
         {
             ScaleInterp interp = new ScaleInterp();
             interp.duration = p_duration;
-            interp.Init(target, p_scale);
+            interp.Init(target, p_to, p_relative);
             AddInterp(interp);
             return this;
         }
 
-        #if PIXEL_GEOM
+        public TweenStep Scale(Vector3 p_from, Vector3 p_to, float p_duration, bool p_relative = false)
+        {
+            ScaleInterp interp = new ScaleInterp();
+            interp.duration = p_duration;
+            interp.Init(target, p_to, p_from, p_relative);
+            AddInterp(interp);
+            return this;
+        }
+
+#if PIXEL_GEOM
         public TweenStep CurveScale(Curve3 p_curve, float p_duration)
         {
             ScaleCurve3Interp interp = new ScaleCurve3Interp(p_curve);
             interp.duration = p_duration;
-            interp.Init(target, Vector3.one);
+            interp.Init(target, Vector3.one, false);
+            AddInterp(interp);
+            return this;
+        }
+
+        public TweenStep CurveScale(Vector3 p_from, Curve3 p_curve, float p_duration)
+        {
+            ScaleCurve3Interp interp = new ScaleCurve3Interp(p_curve);
+            interp.duration = p_duration;
+            interp.Init(target, Vector3.one, p_from, false);
             AddInterp(interp);
             return this;
         }
@@ -320,7 +347,16 @@ namespace Pixel.Tween
         {
             PositionCurve3Interp interp = new PositionCurve3Interp(p_curve);
             interp.duration = p_duration;
-            interp.Init(target, Vector3.one);
+            interp.Init(target, Vector3.one, false);
+            AddInterp(interp);
+            return this;
+        }
+
+        public TweenStep CurvePosition(Vector3 p_from, Curve3 p_curve, float p_duration)
+        {
+            PositionCurve3Interp interp = new PositionCurve3Interp(p_curve);
+            interp.duration = p_duration;
+            interp.Init(target, Vector3.one, p_from, false);
             AddInterp(interp);
             return this;
         }
@@ -329,29 +365,56 @@ namespace Pixel.Tween
         {
             PositionCurve1Interp interp = new PositionCurve1Interp(p_curveX, p_curveY, p_curveZ);
             interp.duration = p_duration;
-            interp.Init(target, Vector3.one);
+            interp.Init(target, Vector3.one, false);
             AddInterp(interp);
             return this;
         }
-        #endif
 
-        public TweenStep Rotation(Quaternion p_rotation, float p_duration)
+        public TweenStep CurvePosition(Vector3 p_from, Curve1 p_curveX, Curve1 p_curveY, Curve1 p_curveZ, float p_duration)
+        {
+            PositionCurve1Interp interp = new PositionCurve1Interp(p_curveX, p_curveY, p_curveZ);
+            interp.duration = p_duration;
+            interp.Init(target, Vector3.one, p_from, false);
+            AddInterp(interp);
+            return this;
+        }
+#endif
+
+        public TweenStep Rotation(Quaternion p_to, float p_duration, bool p_relative = false)
         {
             RotationInterp interp = new RotationInterp();
             interp.duration = p_duration;
-            interp.Init(target, p_rotation);
+            interp.Init(target, p_to, p_relative);
             AddInterp(interp);
             return this;
         }
 
-        public TweenStep Position(Vector3 p_position, float p_duration)
+        public TweenStep Rotation(Quaternion p_from, Quaternion p_to, float p_duration, bool p_relative = false)
+        {
+            RotationInterp interp = new RotationInterp();
+            interp.duration = p_duration;
+            interp.Init(target, p_to, p_from, p_relative);
+            AddInterp(interp);
+            return this;
+        }
+
+        public TweenStep Position(Vector3 p_to, float p_duration, bool p_relative = false)
         {
             PositionInterp interp = new PositionInterp();
             interp.duration = p_duration;
-            interp.Init(target, p_position);
+            interp.Init(target, p_to, p_relative);
             AddInterp(interp);
             return this;
-        }        
+        }
+
+        public TweenStep Position(Vector3 p_from, Vector3 p_to, float p_duration, bool p_relative =  false)
+        {
+            PositionInterp interp = new PositionInterp();
+            interp.duration = p_duration;
+            interp.Init(target, p_to, p_from, p_relative);
+            AddInterp(interp);
+            return this;
+        }
     }
 
     public class TweenSequence
