@@ -251,7 +251,7 @@ namespace Pixel.Tween
             {
                 foreach (Interp interp in _interps)
                 {
-                    if (_time <= interp.duration) interp.Update(interp.ease(_time / interp.duration));
+                    if (_time <= interp.duration) interp.Update(interp.duration == 0 ? 1 : interp.ease(_time / interp.duration));
                 }
             }
 
